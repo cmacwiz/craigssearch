@@ -1,0 +1,104 @@
+import urllib2
+import requests
+import httplib
+import json
+import smtplib
+import time
+import re
+import smtplib
+import dateutil.parser as dparser
+from time import gmtime, strftime, localtime
+from datetime import datetime, timedelta
+
+
+
+#this opens the URL, converts html source code to a string and saves it 
+
+opener = urllib2.build_opener()
+prev_items = [] 
+date_ints = range(0, 5)
+url = 'http://sfbay.craigslist.org/search/scz/zip?'
+limit = 1
+stuff = urllib2.urlopen(url)
+stuff = opener.open(url).read()
+
+
+#delimiters = 'do'
+#regexPattern = '|'.join(map(re.escape, delimiters))
+html_split = re.split('datetime', stuff)
+
+outfile2 = open('splitter.txt', 'w')
+for item in html_split:
+    outfile2.write('%s\n' % item)
+
+
+outfile = open('qawsed.txt', 'w')
+outfile.write(stuff)
+
+#everything inside the if loop executes if a craigslist entry has my keyword(s)
+#it uses string maniupaltion to parse out the date the posting is listed
+#If the date is less than 10 minutes old, then it texts my phone
+#this prevents me getting spammed by my own script for 10+ texts of the same liting
+
+#with open('qawsed.txt', 'r') as searchfile:
+with open('splitter.txt', 'r') as searchfile:
+    for line in searchfile:
+        
+        
+        if  ('fire' in line) or ('FIRE' in line) or ('Wood' in line) or ('WOOD' in line) or ('wood' in line) or ('recliner' in line) or ('firewood' in line):
+            print('huh')
+            
+            prev_items.append(line)
+            prev_items = prev_items[-1:]
+            stringy = prev_items[0]
+            start1 = stringy.find('lnk">') 
+            end1 = stringy.find('</a>', start1)
+            item_title = stringy[start1:end1]
+            #title_split = re.split('-| |:', item_title)            
+            
+            start = stringy.find('2014') 
+            end = stringy.find('" title', start)
+            item_date = stringy[start:end]
+            date_split = re.split('-| |:', item_date)
+            for i in range(0,5):
+                date_ints[i] = int(date_split[i])
+            yr = date_ints[0]
+            mnth = date_ints[1]
+            day = date_ints[2]
+            hour = date_ints[3]
+            minute = date_ints[4]
+            post_time = datetime(yr, mnth, day, hour, minute)
+            current = datetime.now()
+            tdelta = time.mktime(current.timetuple()) - time.mktime(post_time.timetuple())
+            break
+if (tdelta < 600):
+    fromaddr = 'smaugdesiresfuel@gmail.com'
+    toaddrs  = '5082457741@vtext.com'
+
+# Writing the message (this message will appear in the email)
+
+    msg = item_title
+
+# Gmail Login
+
+    username = 'smaugdesiresfuel@gmail.com'
+    password = '[password]'
+
+# Sending the mail  
+
+    server = smtplib.SMTP('smtp.gmail.com:587')
+    server.starttls()
+    server.login(username,password)
+    server.sendmail(fromaddr, toaddrs, msg)
+    server.quit()
+    
+            
+
+
+
+
+
+
+
+
+            
